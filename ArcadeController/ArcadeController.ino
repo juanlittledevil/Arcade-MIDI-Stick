@@ -142,6 +142,10 @@ int scales[16][8] = {
 
 int play_note[16];
 
+// Timer matrix, match the index to pair them up.
+int tick[] = {0};
+const int tock[] = {200};
+
 // =======================================================================================
 // Methods
 // =======================================================================================
@@ -245,7 +249,7 @@ void update_button_states() {
         
         //   --  UP --
         if ( stick_direction == 2 ) {
-          select_midi_channel(butt);
+          select_cc_bank(butt);
         }
 
         //   --  Left --
@@ -257,7 +261,7 @@ void update_button_states() {
         //   -- Down --
         // Mute the parts
         if ( stick_direction == 4 ) {
-          select_cc_bank(butt);
+          select_midi_channel(butt);
         }
 
         
@@ -279,6 +283,7 @@ void update_button_states() {
   }
 }
 
+
 void select_midi_channel(int butt) {
   midi_channel = butt + 1;
   if (debug == true) {
@@ -286,6 +291,29 @@ void select_midi_channel(int butt) {
     print_debug(butt, midi_channel);
   }
 }
+
+
+void display_midi_channel(int index) { // timer returns boolean in a cycle.
+  if ( tick[index] <= tock[index] / 2 ) {
+    if ( stick_direction == 4 ) {
+      digitalWrite(led[midi_channel - 1], HIGH);
+    }
+  }
+  if ( tick[index] >= tock[index] / 2 ) {
+    if ( stick_direction == 4 ) {
+      digitalWrite(led[midi_channel - 1], LOW);
+    }
+  }
+  if ( tick[index] == tock[index] ) {
+    tick[index] = 0;
+  }
+  tick[index]++;
+//  if (debug == true) {
+//    Serial.print("display_midi_channel(tick[index], midi_channel)");
+//    print_debug(tick[index], midi_channel);
+//  }
+}
+
 
 void transpose(int butt) {
   octave = butt;
@@ -295,6 +323,7 @@ void transpose(int butt) {
     print_debug(butt, octave);
   }
 }
+
 
 void select_cc_bank(int butt) {
   part_selection = butt;
@@ -493,6 +522,7 @@ void loop() {
   update_stick_states();
   update_knob_states();
   update_leds();
+  display_midi_channel(0);
 
   while (usbMIDI.read()) {
     // ignore incoming messages

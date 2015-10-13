@@ -49,7 +49,13 @@ const int matrix_size = 16;
 const int bounce_delay = 5; // 10ms
 const byte max_knobs = 8;
 const int max_stick = 4;
+const byte right = 1;
+const byte up = 2;
+const byte left = 3;
+const byte down = 4;
 int octave = 3;  // default octave start @ C3
+int key = 0;     // 0 is C each value is a half step.
+int scale = 0;        // this select the index of scales[x][8].
 
 int part_selection = 0;
 
@@ -120,7 +126,7 @@ int part_midi_state[16][16][8];
 int midi_note[11][12];
 
 //     [scale][note_key]
-int scales[16][8] = {
+int scales[17][8] = { // workaround for reset.
  //1,2,3,4,5,6, 7,8
   {0,2,4,5,7,9,11,0}, // Major                w-w-h-w-w-w-h
   {0,2,3,5,7,8,10,0}, // Natural Minor        w-h-w-w-h-w-w
@@ -137,20 +143,21 @@ int scales[16][8] = {
   {0,2,5,5,7,9, 9,0}, // Scottish             w-3-2-2-3
   {0,2,3,3,7,8, 8,0}, // Hirojoshi            w-h-3-h-3
   {0,2,3,7,7,9, 9,0}, // Major Pentatonic     w-w-3-w-3
-  {0,3,3,5,7,7,10,0}  // Minor Pentatonic     3-w-w-3-w
+  {0,3,3,5,7,7,10,0}, // Minor Pentatonic     3-w-w-3-w
+  {0,1,2,3,4,5, 6,7}  // Bogus only needed 'cos of the logic in select_scale()
 };
 
 int play_note[16];
 
 // Timer matrix, match the index to pair them up.
-int tick[] = {0};
-const int tock[] = {200};
+int tick[] = {0,0,0,0};
+const int tock[] = {200,100,200,25};
 
 // =======================================================================================
 // Methods
 // =======================================================================================
-// init as it states gets ran from setup()
 void init_hardware() {
+// init as it states gets ran from setup()
   for ( int i=0; i < matrix_size; i++ ) {
     pinMode(push_button_pin[i], INPUT_PULLUP);
     pinMode(led[i], OUTPUT);
@@ -165,8 +172,8 @@ void init_hardware() {
   }
 }
 
-// Setup the midi matrix.
 void init_midi_map() {
+// Setup the midi matrix.
   int cc = 0;
   for ( int butt = 0; butt < 16; butt++) {
     for ( int pot = 0; pot < 8; pot++ ) {
@@ -194,25 +201,24 @@ void init_midi_map() {
 
 void update_play_note() {
   // initialize the scale with major.
-  for (int key = 0; key < 8; key++){
-    if ( key != 7 ){
-      play_note[key] = midi_note[octave][scales[0][key]];
+  for (int note = 0; note < 8; note++){
+    if ( note != 7 ){
+      play_note[note] = midi_note[octave][scales[scale][note]];
     } else {
-      play_note[key] = midi_note[octave + 1][scales[0][key]];
+      play_note[note] = midi_note[octave + 1][scales[scale][note]];
     }
   }
-  for (int key = 8; key < 16; key++){
-    if ( key != 15 ){
-      play_note[key] = midi_note[octave + 1][scales[0][key]];
+  for (int note = 8; note < 16; note++){
+    if ( note != 15 ){
+      play_note[note] = midi_note[octave + 1][scales[scale][note]];
     } else {
-      play_note[key] = midi_note[octave + 2][scales[0][key]];
+      play_note[note] = midi_note[octave + 2][scales[scale][note]];
     }
   }
 }
 
-
-// Flashy splash sequence at boot time.
 void boot_sequence() {
+// Flashy splash sequence at boot time.
   for (int i=0; i < matrix_size; i++ ) {
     digitalWrite(led[i], HIGH);
     delay(25);
@@ -221,10 +227,9 @@ void boot_sequence() {
   }
 }
 
-
+void update_button_states() {
 // Button states - this method gets ran from loop()
 // This is is how we get the state of the buttons and do stuff.
-void update_button_states() {
   for ( int butt=0; butt < matrix_size; butt++ ) {
     if (push_button[butt].update()) {
       // LOW is means the button has been pressed.
@@ -239,29 +244,32 @@ void update_button_states() {
         
         //   -- Right --
         // Update the last step value cc 6 value.
-        if ( stick_direction == 1 ) {
-          // usbMIDI.sendControlChange(5, butt + 1, midi_channel);
-          // if (debug == true) {
-            // Serial.print("update_button_states(cc, value)");
-            // print_debug(5, butt + 1);
-          // }
+
+        if ( stick_direction == right ) {
+          if ( butt == 0 ) {  // Select Key
+            // Essentially a transpose value for the scales.
+            select_key(butt);
+          }
+          if ( butt == 1 ) { // Select scale
+            select_scale(butt);
+          }
         }
         
         //   --  UP --
-        if ( stick_direction == 2 ) {
-          select_cc_bank(butt);
+        if ( stick_direction == up ) {
+          select_midi_channel(butt);
         }
 
         //   --  Left --
         // Update the loop length with the 4 bottom buttons.
-        if ( stick_direction == 3 ) {
+        if ( stick_direction == left ) {
           transpose(butt);
         }
 
         //   -- Down --
         // Mute the parts
-        if ( stick_direction == 4 ) {
-          select_midi_channel(butt);
+        if ( stick_direction == down ) {
+          select_cc_bank(butt);
         }
 
         
@@ -283,7 +291,6 @@ void update_button_states() {
   }
 }
 
-
 void select_midi_channel(int butt) {
   midi_channel = butt + 1;
   if (debug == true) {
@@ -292,15 +299,87 @@ void select_midi_channel(int butt) {
   }
 }
 
+void select_scale(int butt) {
+  scale++;
+  if ( scale == 16 ) {
+    scale = 0;
+  }
+  if (debug == true) {
+    Serial.print("select_key(butt, scale)");
+    print_debug(butt, scale);
+  }
+}
 
-void display_midi_channel(int index) { // timer returns boolean in a cycle.
+void select_key(int butt) {
+  key++;
+  if ( key == 12 ) {
+    key = 0;
+  }
+  if (debug == true) {
+    Serial.print("select_key(butt, key)");
+    print_debug(butt, key);
+  }
+}
+
+void display_octave(int index) {
   if ( tick[index] <= tock[index] / 2 ) {
-    if ( stick_direction == 4 ) {
+    if ( stick_direction == left ) {
+      digitalWrite(led[octave], HIGH);
+    }
+  }
+  if ( tick[index] >= tock[index] / 2 ) {
+    if ( stick_direction == left ) {
+      digitalWrite(led[octave], LOW);
+    }
+  }
+  if ( tick[index] == tock[index] ) {
+    tick[index] = 0;
+  }
+  tick[index]++;
+}
+
+void display_scale(int index) {
+  if ( tick[index] <= tock[index] / 2 ) {
+    if ( stick_direction == right && scale < 16) {
+      digitalWrite(led[scale], HIGH);
+    }
+  }
+  if ( tick[index] >= tock[index] / 2 ) {
+    if ( stick_direction == right && scale < 16) {
+      digitalWrite(led[scale], LOW);
+    }
+  }
+  if ( tick[index] == tock[index] ) {
+    tick[index] = 0;
+  }
+  tick[index]++;
+}
+
+void display_key(int index) {
+  if ( tick[index] <= tock[index] / 2 ) {
+    if ( stick_direction == right ) {
+      digitalWrite(led[key], HIGH);
+    }
+  }
+  if ( tick[index] >= tock[index] / 2 ) {
+    if ( stick_direction == right ) {
+      digitalWrite(led[key], LOW);
+    }
+  }
+  if ( tick[index] == tock[index] ) {
+    tick[index] = 0;
+  }
+  tick[index]++;
+}
+
+void display_midi_channel(int index) {
+  if ( tick[index] <= tock[index] / 2 ) {
+    if ( stick_direction == up ) {
       digitalWrite(led[midi_channel - 1], HIGH);
     }
   }
   if ( tick[index] >= tock[index] / 2 ) {
-    if ( stick_direction == 4 ) {
+    if ( stick_direction == up ) {
       digitalWrite(led[midi_channel - 1], LOW);
     }
   }
@@ -308,12 +387,7 @@ void display_midi_channel(int index) { // timer returns boolean in a cycle.
     tick[index] = 0;
   }
   tick[index]++;
-//  if (debug == true) {
-//    Serial.print("display_midi_channel(tick[index], midi_channel)");
-//    print_debug(tick[index], midi_channel);
-//  }
 }
-
 
 void transpose(int butt) {
   octave = butt;
@@ -324,7 +398,6 @@ void transpose(int butt) {
   }
 }
 
-
 void select_cc_bank(int butt) {
   part_selection = butt;
   if (debug == true) {
@@ -333,9 +406,8 @@ void select_cc_bank(int butt) {
   }
 }
 
-
-// This is what happens when we push the buttons.
 void play_notes(int butt, boolean on) {
+  // This is what happens when we push the buttons.
   // == PART NOTES ==
   if (on == HIGH) {
     usbMIDI.sendNoteOn(play_note[butt], 99, midi_channel);
@@ -348,9 +420,8 @@ void play_notes(int butt, boolean on) {
   }
 }
 
-
-// Update Stick - Ran from loop().
 void update_stick_states() {
+  // Update Stick - Ran from loop().
   for ( int i=0; i < max_stick; i++ ) {
     if (stick[i].update()) {
       if (stick[i].read() == LOW) {
@@ -362,23 +433,22 @@ void update_stick_states() {
   }
 }
 
-
-// Which direction is the Joystick pressed?
 void detect_direction(int i, boolean on) {
+// Which direction is the Joystick pressed?
   if (on == HIGH) {
 
     if (i == 0) {
       // Right
-      stick_direction = 1;
+      stick_direction = right;
     } else if (i == 1) {
       // Up
-      stick_direction = 2;
+      stick_direction = up;
     } else if (i == 2) {
       // Left
-      stick_direction = 3;
+      stick_direction = left;
     } else if (i == 3) {
       // down
-      stick_direction = 4;
+      stick_direction = down;
     }
   } else {
     // Center
@@ -390,11 +460,10 @@ void detect_direction(int i, boolean on) {
   }
 }
 
-
-// Turn on leds, or off depending on our state matrix.
 void update_leds() {
+// Turn on leds, or off depending on our state matrix.
   for (int i=0; i < matrix_size; i++ ) {
-    if (i == part_selection) {
+    if (i == part_selection && stick_direction != right) {
       digitalWrite(led[i], HIGH);
       delay(1);
       digitalWrite(led[i], LOW);
@@ -404,16 +473,11 @@ void update_leds() {
   }
 }
 
-
+void shoot_ray(int i) {
 // Visual Effect that shoots a ray in the direction of the stick when a button is pressed.
 // input i: the button number where 0 is the bottom left and 15 is the top right of the matrix.
-void shoot_ray(int i) {
   int ray_delay = 15;
-  if (stick_direction == 1) {
-    //      RIGHT
-    if (debug == true) {
-      Serial.println("right");
-    }
+  if (stick_direction == right) {       //      RIGHT
     for (int x=0; x < 4; x++) {
       for (int y=0; y < 4; y++) {
         if (led_fx[x][y] == led[i]) {
@@ -426,22 +490,14 @@ void shoot_ray(int i) {
       }
     }
 
-  } else if (stick_direction ==2) {
-    //      UP
-    if (debug == true) {
-      Serial.println("up");
-    }
-    for (int x=i; x < 16; x = x + 4) {
+  } else if (stick_direction == up) { //      UP
+    for (int x=i; x >= 0; x = x - 4) {
       digitalWrite(led[x], HIGH);
       delay(ray_delay);
       digitalWrite(led[x], LOW);
     }
 
-  } else if (stick_direction ==3) {
-    //      LEFT
-    if (debug == true) {
-      Serial.println("left");
-    }
+  } else if (stick_direction == left) { //      LEFT
     for (int x=0; x < 4; x++) {
       for (int y=0; y < 4; y++) {
         if (led_fx[x][y] == led[i]) {
@@ -454,12 +510,8 @@ void shoot_ray(int i) {
       }
     }
 
-  } else if (stick_direction ==4) {
-    //      DOWN
-    if (debug == true) {
-      Serial.println("down");
-    }
-    for (int x=i; x >= 0; x = x - 4) {
+  } else if (stick_direction == down) { //      DOWN
+    for (int x=i; x < 16; x = x + 4) {
       digitalWrite(led[x], HIGH);
       delay(ray_delay);
       digitalWrite(led[x], LOW);
@@ -472,9 +524,8 @@ void shoot_ray(int i) {
   }
 }
 
-
-// Knob states...
 void update_knob_states() {
+// Knob states...
   for (int i=0; i < max_knobs; i++ ) {
     knob_state[i] = map(knobs[i].read(), 0, 1024, 0, 128);
     if ( knob_state[i] != knob_prev_state[i] ) {
@@ -491,9 +542,8 @@ void update_knob_states() {
   }
 }
 
-
-// Tool for debugging output into serial console.
 void print_debug(int arg1, int arg2) {
+// Tool for debugging output into serial console.
   Serial.print(" [");
   Serial.print(arg1);
   Serial.print("]: ");
@@ -523,6 +573,9 @@ void loop() {
   update_knob_states();
   update_leds();
   display_midi_channel(0);
+  display_octave(1);
+  display_key(2);
+  display_scale(3);
 
   while (usbMIDI.read()) {
     // ignore incoming messages

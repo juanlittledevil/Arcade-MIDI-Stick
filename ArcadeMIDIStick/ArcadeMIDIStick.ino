@@ -44,24 +44,24 @@
 bool debug = true;
 
 // We have a 4 x 4 matrix of buttons.
-int midi_channel = 10;
-const int matrix_size = 16;
-const int bounce_delay = 5; // 10ms
+byte midi_channel = 10;
+const byte matrix_size = 16;
+const byte bounce_delay = 5; // 10ms
 const byte max_knobs = 8;
-const int max_stick = 4;
+const byte max_stick = 4;
 const byte right = 1;
 const byte up = 2;
 const byte left = 3;
 const byte down = 4;
-int octave = 3;  // default octave start @ C3
-int key = 0;     // 0 is C each value is a half step.
-int scale = 16;        // this select the index of scales[x][8]. default to chromatic.
+byte octave = 3;  // default octave start @ C3
+byte key = 0;     // 0 is C each value is a half step.
+byte scale = 16;        // this select the index of scales[x][8]. default to chromatic.
 
-int part_selection = 0;
+byte part_selection = 0;
 
 
 // used to store the pin values.
-int push_button_pin[matrix_size] = {
+byte push_button_pin[matrix_size] = {
   0, 1, 2, 3,
   4, 5, 6, 7,
   8, 9, 10, 11,
@@ -77,7 +77,7 @@ Bounce push_button[] = {
 };
 
 // LED pins
-int led[matrix_size] = {
+byte led[matrix_size] = {
   20, 21, 22, 23,
   24, 25, 26, 27,
   28, 29, 30, 31,
@@ -102,31 +102,34 @@ boolean led_fx[4][4] = {
 
 
 // joystick
-int stick_direction = 0;
-int stick_pins[max_stick] = {16, 17, 18, 19};
+byte stick_direction = 0;
+byte stick_pins[max_stick] = {16, 17, 18, 19};
 Bounce stick[] = {
   Bounce(16, bounce_delay), Bounce(17, bounce_delay), Bounce(18, bounce_delay), Bounce(19, bounce_delay)
 };
 
 
 // knobs  
-int knob_pins[max_knobs] = {38, 39, 40, 41, 42, 43, 44, 45};    // teensy pin values
-int knob_state[max_knobs] = {0, 0, 0, 0, 0, 0, 0, 0};           // initialize the knob states
-int knob_prev_state[max_knobs] = {0, 0, 0, 0, 0, 0, 0, 0};      // used to compare updates with previous state. Did it change?
+byte knob_pins[max_knobs] = {38, 39, 40, 41, 42, 43, 44, 45};    // teensy pin values
+byte knob_state[max_knobs] = {0, 0, 0, 0, 0, 0, 0, 0};           // initialize the knob states
+
+
+//            [midi_ch][part][cc_number]
+byte knob_prev_state[16][16][max_knobs];                 // used to compare updates with previous state. Did it change?
 
 SmoothAnalogInput knobs[max_knobs];                             // create array of SmoothAnalogInput objects.
 
 //           [part][cc_number]
-int part_midi_map[16][8];
+byte part_midi_map[16][max_knobs];
 
 //         [midi_ch][part][cc_number]
-int part_midi_state[16][16][8];
+byte part_midi_state[16][16][max_knobs];
 
 //      [octave][note]
-int midi_note[11][12];
+byte midi_note[11][12];
 
 //     [scale][note_key]
-int scales[17][12] = { // workaround for reset.
+byte scales[17][12] = { // workaround for reset.
  //1,2,3,4,5,6, 7,8
   {0,2,4,5,7,9,11,0}, // Major                w-w-h-w-w-w-h
   {0,2,3,5,7,8,10,0}, // Natural Minor        w-h-w-w-h-w-w
@@ -147,11 +150,11 @@ int scales[17][12] = { // workaround for reset.
   {0,1,2,3,4,5, 6,7,8,9,10,11}  // defualt to chromatic.
 };
 
-int play_note[16];
+byte play_note[16];
 
 // Timer matrix, match the index to pair them up.
-int tick[] = {0,0,0,0};
-const int tock[] = {200,100,200,25};
+byte tick[] = {0,0,0,0};
+const byte tock[] = {200,100,200,25};
 
 // =======================================================================================
 // Methods
@@ -186,6 +189,14 @@ void init_midi_map() {
     for ( int butt = 0; butt < 16; butt++) {
       for ( int pot = 0; pot < 8; pot++ ) {
         part_midi_state[midi_ch][butt][pot] = 0;
+      }
+    }
+  }
+
+  for ( int midi_ch = 0; midi_ch < 16; midi_ch++ ) {
+    for ( int butt = 0; butt < 16; butt++) {
+      for ( int pot = 0; pot < 8; pot++ ) {
+        knob_prev_state[midi_ch][butt][pot] = 0;
       }
     }
   }
@@ -537,17 +548,22 @@ void update_knob_states() {
 // Knob states...
   for (int i=0; i < max_knobs; i++ ) {
     knob_state[i] = map(knobs[i].read(), 0, 1024, 0, 128);
-    if ( knob_state[i] != knob_prev_state[i] ) {
+    if ( knob_state[i] != knob_prev_state[midi_channel -1][part_selection][i] ) {
       part_midi_state[midi_channel - 1][part_selection][i] = knob_state[i];
 
-      usbMIDI.sendControlChange(part_midi_map[part_selection][i], part_midi_state[midi_channel - 1][part_selection][i], midi_channel);
+      usbMIDI.sendControlChange(part_midi_map[part_selection][i],
+                                part_midi_state[midi_channel - 1][part_selection][i],
+                                midi_channel
+                                );
 
       if (debug == true) {
         Serial.print("update_knob_states(cc, value)");
-        print_debug(part_midi_map[part_selection][i], part_midi_state[midi_channel - 1][part_selection][i]);
+        print_debug(part_midi_map[part_selection][i],
+                                  part_midi_state[midi_channel - 1][part_selection][i]
+                                  );
       }
     }
-    knob_prev_state[i] = knob_state[i];
+    knob_prev_state[midi_channel -1][part_selection][i] = knob_state[i];
   }
 }
 

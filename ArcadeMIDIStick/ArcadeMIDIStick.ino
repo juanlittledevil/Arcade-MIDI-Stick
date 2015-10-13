@@ -55,7 +55,7 @@ const byte left = 3;
 const byte down = 4;
 byte octave = 3;  // default octave start @ C3
 byte key = 0;     // 0 is C each value is a half step.
-byte scale = 16;        // this select the index of scales[x][8]. default to chromatic.
+byte scale = 15;        // this select the index of scales[x][8]. default to chromatic.
 
 byte part_selection = 0;
 
@@ -323,7 +323,7 @@ void select_midi_channel(byte butt) {
 
 void select_scale(byte butt) {
   scale++;
-  if ( scale == 17 ) {
+  if ( scale == 16 ) {
     scale = 0;
   }
   if (debug == true) {
@@ -511,7 +511,7 @@ void shoot_ray(byte i) {
 // input i: the button number where 0 is the bottom left and 15 is the top right of the matrix.
   byte ray_delay = 15;
   if (stick_direction == right) {       //      RIGHT
-    for (byte x=0; x < 4; x++) {
+/*    for (byte x=0; x < 4; x++) {    // This one isn't affecting anything, but it looks odd..
       for (byte y=0; y < 4; y++) {
         if (led_fx[x][y] == led[i]) {
           for (byte a=y; a < 4; a++) {
@@ -521,17 +521,17 @@ void shoot_ray(byte i) {
           }
         }
       }
-    }
+    } */
 
   } else if (stick_direction == up) { //      UP
-    for (byte x=i; x >= 0; x = x - 4) {
-      digitalWrite(led[x], HIGH);
+/*    for (byte x=i; x >= 0; x = x - 4) { // this is causing weird behavior, I think it uses up all little RAM left.
+      digitalWrite(led[x], HIGH);         // I'm gonna turn it off, it's cosmetic anyway.
       delay(ray_delay);
       digitalWrite(led[x], LOW);
-    }
+    }*/
 
   } else if (stick_direction == left) { //      LEFT
-    for (byte x=0; x < 4; x++) {
+/*    for (byte x=0; x < 4; x++) { // this one is also eating up mem so, better turn it off as well.
       for (byte y=0; y < 4; y++) {
         if (led_fx[x][y] == led[i]) {
           for (byte a=y; a >= 0; a--) {
@@ -541,7 +541,7 @@ void shoot_ray(byte i) {
           }
         }
       }
-    }
+    } */
 
   } else if (stick_direction == down) { //      DOWN
     for (byte x=i; x < 16; x = x + 4) {

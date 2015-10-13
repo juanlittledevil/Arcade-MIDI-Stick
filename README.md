@@ -1,4 +1,4 @@
-#  Arcade Tank Stick V2.0
+#  Arcade MIDI Stick V2.0
 
 ### Author: Juan Segovia
 ### Contact: www.juanlittledevil.com (juanlittledevil at gmail.com)
@@ -45,6 +45,7 @@ To select the MIDI Channel hold the joystick in the up position. Part selection 
 	`               ( 5)    ( 6)    ( 7)    ( 8) `
 	`               ( 1)    ( 2)    ( 3)    ( 4) `
 
+A blinking light will indicate the currently selected MIDI channel as long as the stick is in the up position.
 
 ### DOWN
 
@@ -65,8 +66,15 @@ The following shows the bank order.
 	`    |          ( 5)    ( 6)    ( 7)    ( 8) `
 	`    v          ( 1)    ( 2)    ( 3)    ( 4) `
 
+A solid lit led will indicate the currently selected part.
+
 
 ### LEFT
+
+Press and hold left on the stick while pressing a button to select which octave the buttons will play. The default
+is C3 where C3 (note 36) is mapped to the bottom left button and so on. You can easily navigate through the entire
+key range this way. By default pressing keys will play a chromatic scale, however this can be changed see below. A
+blinking light will indicate the current octave.
 
 	`               (13)    (14)    (15)    (16) `
 	`  <--          ( 9)    (10)    (11)    (12) `
@@ -81,15 +89,61 @@ The following shows the bank order.
 	`               ( 5)    ( 6)    ( 7)    ( 8) `
 	`               ( 1)    ( 2)    ( 3)    ( 4) `
 
+The right direction of the stick enables a multi-mode selection as follows.
+
+## Key selection
+
+While holding the stick to the right position press button (1) to cycle through the 12 keys. By default the scale
+will play in the key of C, but pressing the button will transpose the scale by half a step. An slow blinking LED
+will light up and indicate which key is currently selected. The lit LED maps as follows:
+
+	(1)     -     C
+	(2)     -     C#
+	(3)     -     D
+	(4)     -     D#
+	(5)     -     E
+	(6)     -     F
+	(7)     -     F#
+	(8)     -     G
+	(9)     -     G#
+	(10)    -     A
+	(11)    -     A#
+	(12)    -     B
+
+## scale selection
+
+While holding the stick to the right position press button (2) to cycle through 17 scales. By default the scale played
+is a chromatic scale with all 12 steps. However, enabling scales will change it so that only keys in that particular
+scale are played. A fast led will light up indicating the currently selected scale but only for scales 1 to 16.
+scale 17 (chromatic) will not show a fast blinking light, you will still see the slow blinking light however.
+Here is a breakdown of the different scale modes:
+
+	(1)    Major                w-w-h-w-w-w-h
+	(2)    Natural Minor        w-h-w-w-h-w-w
+	(3)    Harmonic Minor       w-h-w-w-h-3-h
+	(4)    Jazz/Melodic Minor   w-h-w-w-w-w-h
+	(5)    Dorian               w-h-w-w-w-h-w
+	(6)    Phrygian             h-w-w-w-h-w-w
+	(7)    Spanish              h-3-h-w-h-w-w
+	(8)    Lydian               w-w-w-h-w-w-h
+	(9)    Diminished           w-h-w-h-w-h-w
+	(10)   Persian              h-3-h-h-w-3-h
+	(11)   Arabian              w-w-h-h-w-w-w
+	(12)   Blues                3-w-h-h-3-w
+	(13)   Scottish             w-3-2-2-3
+	(14)   Hirojoshi            w-h-3-h-3
+	(15)   Major Pentatonic     w-w-3-w-3
+	(16)   Minor Pentatonic     3-w-w-3-w
+	(17)   (defualt) chromatic.
 
 
 ### CENTER
 
-This is the default mode.
+This is the default mode. In this mode the buttons imply play midi notes. While in the center position
 
-## Final words... 
+## Final words.
 
-I'm not a C++ programmer and was not able to get eclipse arduino to work so I was
-forced to use the arduino IDE which is kinda lame IMHO. There are some things in here which would have
-benefited from making them into objects, instead I had to do some mad multi-dimentional arrays.
-The result was satisfactory tho. Have fun with this, I hope you enjoy it as much as I have been.
+At the moment knob updates simply jump to the value of the pot. I'm trying to figure out how to create differnt modes
+like those found in the Little Phatty where you can set it up as a latch mode or a gradually adjusting mode. I have
+some ideas as to the latch mode but I've yet to come up with the mean or meet me in the middle mode. Any ideas are
+welcomed.

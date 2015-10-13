@@ -42,6 +42,7 @@
 // =======================================================================================
 
 bool debug = false;
+bool latch_mode = true;
 
 // We have a 4 x 4 matrix of buttons.
 byte midi_channel = 10;
@@ -155,8 +156,8 @@ byte update_flag[16][16][8];
 byte play_note[16];
 
 // Timer matrix, match the index to pair them up.
-byte tick[] = {0,0,0,0};
-const byte tock[] = {200,100,200,25};
+byte tick[] = {0,0,0,0,0};
+const byte tock[] = {200,100,200,25,10};
 
 // =======================================================================================
 // Methods
@@ -275,6 +276,9 @@ void update_button_states() {
           if ( butt == 1 ) { // Select scale
             select_scale(butt);
           }
+          if ( butt == 2 ) { // Select scale
+            select_latch_mode(butt);
+          }
         }
         
         //   --  UP --
@@ -332,6 +336,18 @@ void select_scale(byte butt) {
   }
 }
 
+void select_latch_mode(byte butt) {
+  if (latch_mode == true) {
+    latch_mode = false;
+  } else {
+    latch_mode = true;
+  }
+  if (debug == true) {
+    Serial.print("select_latch_mode(butt, latch_mode)");
+    print_debug(butt, latch_mode);
+  }
+}
+
 void select_key(byte butt) {
   key++;
   if ( key == 12 ) {
@@ -352,6 +368,23 @@ void display_octave(byte index) {
   if ( tick[index] >= tock[index] / 2 ) {
     if ( stick_direction == left ) {
       digitalWrite(led[octave], LOW);
+    }
+  }
+  if ( tick[index] == tock[index] ) {
+    tick[index] = 0;
+  }
+  tick[index]++;
+}
+
+void display_latch_mode(byte index) {
+  if ( tick[index] <= tock[index] / 2 ) {
+    if ( stick_direction == right && latch_mode == true ) {
+      digitalWrite(led[2], HIGH);
+    }
+  }
+  if ( tick[index] >= tock[index] / 2 ) {
+    if ( stick_direction == right && latch_mode == true ) {
+      digitalWrite(led[2], LOW);
     }
   }
   if ( tick[index] == tock[index] ) {
@@ -422,7 +455,11 @@ void transpose(byte butt) {
 
 void select_cc_bank(byte butt) {
   part_selection = butt;
-  set_update_flag(false);
+  if ( latch_mode == true ) {
+    set_update_flag(false);
+  } else {
+    set_update_flag(true);
+  }
   if (debug == true) {
     Serial.print("select_cc_bank(button, part_selection)");
     print_debug(butt, part_selection);
@@ -622,6 +659,7 @@ void loop() {
   display_octave(1);
   display_key(2);
   display_scale(3);
+  display_latch_mode(4);
 
   while (usbMIDI.read()) {
     // ignore incoming messages

@@ -55,7 +55,7 @@ const byte left = 3;
 const byte down = 4;
 int octave = 3;  // default octave start @ C3
 int key = 0;     // 0 is C each value is a half step.
-int scale = 0;        // this select the index of scales[x][8].
+int scale = 16;        // this select the index of scales[x][8]. default to chromatic.
 
 int part_selection = 0;
 
@@ -126,7 +126,7 @@ int part_midi_state[16][16][8];
 int midi_note[11][12];
 
 //     [scale][note_key]
-int scales[17][8] = { // workaround for reset.
+int scales[17][12] = { // workaround for reset.
  //1,2,3,4,5,6, 7,8
   {0,2,4,5,7,9,11,0}, // Major                w-w-h-w-w-w-h
   {0,2,3,5,7,8,10,0}, // Natural Minor        w-h-w-w-h-w-w
@@ -144,7 +144,7 @@ int scales[17][8] = { // workaround for reset.
   {0,2,3,3,7,8, 8,0}, // Hirojoshi            w-h-3-h-3
   {0,2,3,7,7,9, 9,0}, // Major Pentatonic     w-w-3-w-3
   {0,3,3,5,7,7,10,0}, // Minor Pentatonic     3-w-w-3-w
-  {0,1,2,3,4,5, 6,7}  // Bogus only needed 'cos of the logic in select_scale()
+  {0,1,2,3,4,5, 6,7,8,9,10,11}  // defualt to chromatic.
 };
 
 int play_note[16];
@@ -201,18 +201,27 @@ void init_midi_map() {
 
 void update_play_note() {
   // initialize the scale with major.
-  for (int note = 0; note < 8; note++){
-    if ( note != 7 ){
-      play_note[note] = midi_note[octave][scales[scale][note]];
-    } else {
-      play_note[note] = midi_note[octave + 1][scales[scale][note]];
+  if ( scale < 16 ) {
+    for (int note = 0; note < 8; note++){
+      if ( note != 7 ){
+        play_note[note] = midi_note[octave][scales[scale][note]] + key;
+      } else {
+        play_note[note] = midi_note[octave + 1][scales[scale][note]] + key;
+      }
     }
-  }
-  for (int note = 8; note < 16; note++){
-    if ( note != 15 ){
-      play_note[note] = midi_note[octave + 1][scales[scale][note]];
-    } else {
-      play_note[note] = midi_note[octave + 2][scales[scale][note]];
+    for (int note = 8; note < 16; note++){
+      if ( note != 15 ){
+        play_note[note] = midi_note[octave + 1][scales[scale][note - 8]] + key;
+      } else {
+        play_note[note] = midi_note[octave + 2][scales[scale][note - 8]] + key;
+      }
+    }
+  } else if (scale == 16) {
+    for (int note = 0; note < 12; note++) {
+      play_note[note] = midi_note[octave][scales[16][note]] + key;
+    }
+    for (int note = 12; note < 16; note++) {
+      play_note[note] = midi_note[octave + 1][scales[16][note - 12]] + key;
     }
   }
 }
@@ -301,7 +310,7 @@ void select_midi_channel(int butt) {
 
 void select_scale(int butt) {
   scale++;
-  if ( scale == 16 ) {
+  if ( scale == 17 ) {
     scale = 0;
   }
   if (debug == true) {

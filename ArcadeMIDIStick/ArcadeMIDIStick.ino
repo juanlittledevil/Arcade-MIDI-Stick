@@ -150,6 +150,8 @@ byte scales[17][12] = { // workaround for reset.
   {0,1,2,3,4,5, 6,7,8,9,10,11}  // defualt to chromatic.
 };
 
+byte update_flag[16][16][8];
+
 byte play_note[16];
 
 // Timer matrix, match the index to pair them up.
@@ -161,49 +163,49 @@ const byte tock[] = {200,100,200,25};
 // =======================================================================================
 void init_hardware() {
 // init as it states gets ran from setup()
-  for ( int i=0; i < matrix_size; i++ ) {
+  for ( byte i=0; i < matrix_size; i++ ) {
     pinMode(push_button_pin[i], INPUT_PULLUP);
     pinMode(led[i], OUTPUT);
   }
 
-  for ( int i=0; i < max_knobs; i++ ) {
+  for ( byte i=0; i < max_knobs; i++ ) {
     knobs[i].attach(knob_pins[i]);
   }
 
-  for ( int i=0; i < max_stick; i++) {
+  for ( byte i=0; i < max_stick; i++) {
     pinMode(stick_pins[i], INPUT_PULLUP);
   }
 }
 
 void init_midi_map() {
 // Setup the midi matrix.
-  int cc = 0;
-  for ( int butt = 0; butt < 16; butt++) {
-    for ( int pot = 0; pot < 8; pot++ ) {
+  byte cc = 0;
+  for ( byte butt = 0; butt < 16; butt++) {
+    for ( byte pot = 0; pot < 8; pot++ ) {
       part_midi_map[butt][pot] = cc;
       cc++;
     }
   }
 
-  for ( int midi_ch = 0; midi_ch < 16; midi_ch++ ) {
-    for ( int butt = 0; butt < 16; butt++) {
-      for ( int pot = 0; pot < 8; pot++ ) {
+  for ( byte midi_ch = 0; midi_ch < 16; midi_ch++ ) {
+    for ( byte butt = 0; butt < 16; butt++) {
+      for ( byte pot = 0; pot < 8; pot++ ) {
         part_midi_state[midi_ch][butt][pot] = 0;
       }
     }
   }
 
-  for ( int midi_ch = 0; midi_ch < 16; midi_ch++ ) {
-    for ( int butt = 0; butt < 16; butt++) {
-      for ( int pot = 0; pot < 8; pot++ ) {
+  for ( byte midi_ch = 0; midi_ch < 16; midi_ch++ ) {
+    for ( byte butt = 0; butt < 16; butt++) {
+      for ( byte pot = 0; pot < 8; pot++ ) {
         knob_prev_state[midi_ch][butt][pot] = 0;
       }
     }
   }
 
-  int note_val = 0;
-  for ( int oct = 0; oct < 11; oct++ ) {
-    for ( int note = 0; note < 12; note++ ) {
+  byte note_val = 0;
+  for ( byte oct = 0; oct < 11; oct++ ) {
+    for ( byte note = 0; note < 12; note++ ) {
       midi_note[oct][note] = note_val;
       note_val++;
     }
@@ -213,14 +215,14 @@ void init_midi_map() {
 void update_play_note() {
   // initialize the scale with major.
   if ( scale < 16 ) {
-    for (int note = 0; note < 8; note++){
+    for (byte note = 0; note < 8; note++){
       if ( note != 7 ){
         play_note[note] = midi_note[octave][scales[scale][note]] + key;
       } else {
         play_note[note] = midi_note[octave + 1][scales[scale][note]] + key;
       }
     }
-    for (int note = 8; note < 16; note++){
+    for (byte note = 8; note < 16; note++){
       if ( note != 15 ){
         play_note[note] = midi_note[octave + 1][scales[scale][note - 8]] + key;
       } else {
@@ -228,10 +230,10 @@ void update_play_note() {
       }
     }
   } else if (scale == 16) {
-    for (int note = 0; note < 12; note++) {
+    for (byte note = 0; note < 12; note++) {
       play_note[note] = midi_note[octave][scales[16][note]] + key;
     }
-    for (int note = 12; note < 16; note++) {
+    for (byte note = 12; note < 16; note++) {
       play_note[note] = midi_note[octave + 1][scales[16][note - 12]] + key;
     }
   }
@@ -239,7 +241,7 @@ void update_play_note() {
 
 void boot_sequence() {
 // Flashy splash sequence at boot time.
-  for (int i=0; i < matrix_size; i++ ) {
+  for (byte i=0; i < matrix_size; i++ ) {
     digitalWrite(led[i], HIGH);
     delay(25);
     digitalWrite(led[i], LOW);
@@ -250,7 +252,7 @@ void boot_sequence() {
 void update_button_states() {
 // Button states - this method gets ran from loop()
 // This is is how we get the state of the buttons and do stuff.
-  for ( int butt=0; butt < matrix_size; butt++ ) {
+  for ( byte butt=0; butt < matrix_size; butt++ ) {
     if (push_button[butt].update()) {
       // LOW is means the button has been pressed.
       if (push_button[butt].read() == LOW) {
@@ -311,7 +313,7 @@ void update_button_states() {
   }
 }
 
-void select_midi_channel(int butt) {
+void select_midi_channel(byte butt) {
   midi_channel = butt + 1;
   if (debug == true) {
     Serial.print("select_midi_channel(button, midi_channel)");
@@ -319,7 +321,7 @@ void select_midi_channel(int butt) {
   }
 }
 
-void select_scale(int butt) {
+void select_scale(byte butt) {
   scale++;
   if ( scale == 17 ) {
     scale = 0;
@@ -330,7 +332,7 @@ void select_scale(int butt) {
   }
 }
 
-void select_key(int butt) {
+void select_key(byte butt) {
   key++;
   if ( key == 12 ) {
     key = 0;
@@ -341,7 +343,7 @@ void select_key(int butt) {
   }
 }
 
-void display_octave(int index) {
+void display_octave(byte index) {
   if ( tick[index] <= tock[index] / 2 ) {
     if ( stick_direction == left ) {
       digitalWrite(led[octave], HIGH);
@@ -358,7 +360,7 @@ void display_octave(int index) {
   tick[index]++;
 }
 
-void display_scale(int index) {
+void display_scale(byte index) {
   if ( tick[index] <= tock[index] / 2 ) {
     if ( stick_direction == right && scale < 16) {
       digitalWrite(led[scale], HIGH);
@@ -375,7 +377,7 @@ void display_scale(int index) {
   tick[index]++;
 }
 
-void display_key(int index) {
+void display_key(byte index) {
   if ( tick[index] <= tock[index] / 2 ) {
     if ( stick_direction == right ) {
       digitalWrite(led[key], HIGH);
@@ -392,7 +394,7 @@ void display_key(int index) {
   tick[index]++;
 }
 
-void display_midi_channel(int index) {
+void display_midi_channel(byte index) {
   if ( tick[index] <= tock[index] / 2 ) {
     if ( stick_direction == up ) {
       digitalWrite(led[midi_channel - 1], HIGH);
@@ -409,7 +411,7 @@ void display_midi_channel(int index) {
   tick[index]++;
 }
 
-void transpose(int butt) {
+void transpose(byte butt) {
   octave = butt;
   update_play_note();
   if (debug == true) {
@@ -418,15 +420,26 @@ void transpose(int butt) {
   }
 }
 
-void select_cc_bank(int butt) {
+void select_cc_bank(byte butt) {
   part_selection = butt;
+  set_update_flag(false);
   if (debug == true) {
     Serial.print("select_cc_bank(button, part_selection)");
     print_debug(butt, part_selection);
   }
 }
 
-void play_notes(int butt, boolean on) {
+void set_update_flag(bool state) {
+  for (byte m_channel=0; m_channel < 16; m_channel++) {
+    for (byte part=0; part < 16; part++) {
+      for (byte knob=0; knob < 8; knob++) {
+        update_flag[m_channel][part][knob] = state;
+      }
+    }
+  }
+}
+
+void play_notes(byte butt, boolean on) {
   // This is what happens when we push the buttons.
   // == PART NOTES ==
   if (on == HIGH) {
@@ -442,7 +455,7 @@ void play_notes(int butt, boolean on) {
 
 void update_stick_states() {
   // Update Stick - Ran from loop().
-  for ( int i=0; i < max_stick; i++ ) {
+  for ( byte i=0; i < max_stick; i++ ) {
     if (stick[i].update()) {
       if (stick[i].read() == LOW) {
         detect_direction(i, HIGH);
@@ -453,7 +466,7 @@ void update_stick_states() {
   }
 }
 
-void detect_direction(int i, boolean on) {
+void detect_direction(byte i, boolean on) {
 // Which direction is the Joystick pressed?
   if (on == HIGH) {
 
@@ -482,7 +495,7 @@ void detect_direction(int i, boolean on) {
 
 void update_leds() {
 // Turn on leds, or off depending on our state matrix.
-  for (int i=0; i < matrix_size; i++ ) {
+  for (byte i=0; i < matrix_size; i++ ) {
     if (i == part_selection && stick_direction != right) {
       digitalWrite(led[i], HIGH);
       delay(1);
@@ -493,15 +506,15 @@ void update_leds() {
   }
 }
 
-void shoot_ray(int i) {
+void shoot_ray(byte i) {
 // Visual Effect that shoots a ray in the direction of the stick when a button is pressed.
 // input i: the button number where 0 is the bottom left and 15 is the top right of the matrix.
-  int ray_delay = 15;
+  byte ray_delay = 15;
   if (stick_direction == right) {       //      RIGHT
-    for (int x=0; x < 4; x++) {
-      for (int y=0; y < 4; y++) {
+    for (byte x=0; x < 4; x++) {
+      for (byte y=0; y < 4; y++) {
         if (led_fx[x][y] == led[i]) {
-          for (int a=y; a < 4; a++) {
+          for (byte a=y; a < 4; a++) {
             digitalWrite(led_fx[x][a], HIGH);
             delay(ray_delay);
             digitalWrite(led_fx[x][a], LOW);
@@ -511,17 +524,17 @@ void shoot_ray(int i) {
     }
 
   } else if (stick_direction == up) { //      UP
-    for (int x=i; x >= 0; x = x - 4) {
+    for (byte x=i; x >= 0; x = x - 4) {
       digitalWrite(led[x], HIGH);
       delay(ray_delay);
       digitalWrite(led[x], LOW);
     }
 
   } else if (stick_direction == left) { //      LEFT
-    for (int x=0; x < 4; x++) {
-      for (int y=0; y < 4; y++) {
+    for (byte x=0; x < 4; x++) {
+      for (byte y=0; y < 4; y++) {
         if (led_fx[x][y] == led[i]) {
-          for (int a=y; a >= 0; a--) {
+          for (byte a=y; a >= 0; a--) {
             digitalWrite(led_fx[x][a], HIGH);
             delay(ray_delay);
             digitalWrite(led_fx[x][a], LOW);
@@ -531,7 +544,7 @@ void shoot_ray(int i) {
     }
 
   } else if (stick_direction == down) { //      DOWN
-    for (int x=i; x < 16; x = x + 4) {
+    for (byte x=i; x < 16; x = x + 4) {
       digitalWrite(led[x], HIGH);
       delay(ray_delay);
       digitalWrite(led[x], LOW);
@@ -546,28 +559,36 @@ void shoot_ray(int i) {
 
 void update_knob_states() {
 // Knob states...
-  for (int i=0; i < max_knobs; i++ ) {
+  for (byte i=0; i < max_knobs; i++ ) {
     knob_state[i] = map(knobs[i].read(), 0, 1024, 0, 128);
-    if ( knob_state[i] != knob_prev_state[midi_channel -1][part_selection][i] ) {
-      part_midi_state[midi_channel - 1][part_selection][i] = knob_state[i];
-
-      usbMIDI.sendControlChange(part_midi_map[part_selection][i],
-                                part_midi_state[midi_channel - 1][part_selection][i],
-                                midi_channel
-                                );
-
-      if (debug == true) {
-        Serial.print("update_knob_states(cc, value)");
-        print_debug(part_midi_map[part_selection][i],
-                                  part_midi_state[midi_channel - 1][part_selection][i]
-                                  );
-      }
+    if ( knob_state[i] == knob_prev_state[midi_channel -1][part_selection][i] ) {
+      update_flag[midi_channel][part_selection][i] = true;
     }
-    knob_prev_state[midi_channel -1][part_selection][i] = knob_state[i];
+  }
+  for (byte i=0; i < max_knobs; i++ ) {
+    if ( update_flag[midi_channel][part_selection][i] == true ){
+      knob_state[i] = map(knobs[i].read(), 0, 1024, 0, 128);
+      if ( knob_state[i] != knob_prev_state[midi_channel -1][part_selection][i] ) {
+        part_midi_state[midi_channel - 1][part_selection][i] = knob_state[i];
+
+        usbMIDI.sendControlChange(part_midi_map[part_selection][i],
+                                  part_midi_state[midi_channel - 1][part_selection][i],
+                                  midi_channel
+                                  );
+
+        if (debug == true) {
+          Serial.print("update_knob_states(cc, value)");
+          print_debug(part_midi_map[part_selection][i],
+                                    part_midi_state[midi_channel - 1][part_selection][i]
+                                    );
+        }
+      }
+      knob_prev_state[midi_channel -1][part_selection][i] = knob_state[i];
+    }
   }
 }
 
-void print_debug(int arg1, int arg2) {
+void print_debug(byte arg1, byte arg2) {
 // Tool for debugging output into serial console.
   Serial.print(" [");
   Serial.print(arg1);

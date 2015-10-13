@@ -141,9 +141,3 @@ Here is a breakdown of the different scale modes:
 
 This is the default mode. In this mode the buttons imply play midi notes. While in the center position
 
-## Final words.
-
-At the moment knob updates simply jump to the value of the pot. I'm trying to figure out how to create differnt modes
-like those found in the Little Phatty where you can set it up as a latch mode or a gradually adjusting mode. I have
-some ideas as to the latch mode but I've yet to come up with the mean or meet me in the middle mode. Any ideas are
-welcomed.

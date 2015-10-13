@@ -41,7 +41,7 @@
 // Variables
 // =======================================================================================
 
-bool debug = true;
+bool debug = false;
 
 // We have a 4 x 4 matrix of buttons.
 byte midi_channel = 10;

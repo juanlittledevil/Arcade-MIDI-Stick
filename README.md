@@ -36,7 +36,7 @@ https://github.com/rl337/Arduino/tree/master/libraries/SmoothAnalogInput
 
 The joystick is used to select different modes.
 
-### UP - Channel Slect.
+### UP - MIDI Channel Selector.
 
 To select the MIDI Channel hold the joystick in the up position. Part selection is as follows.
 
@@ -47,7 +47,7 @@ To select the MIDI Channel hold the joystick in the up position. Part selection 
 
 A blinking light will indicate the currently selected MIDI channel as long as the stick is in the up position.
 
-### DOWN
+### DOWN - Knob Bank Selector
 
 There are 16 bank of 8 knobs. Each knob will send a MIDI cc message. The knobs are arranged as shown here.
 
@@ -69,7 +69,7 @@ The following shows the bank order.
 A solid lit led will indicate the currently selected part.
 
 
-### LEFT
+### LEFT - Octave Selector
 
 Press and hold left on the stick while pressing a button to select which octave the buttons will play. The default
 is C3 where C3 (note 36) is mapped to the bottom left button and so on. You can easily navigate through the entire
@@ -82,7 +82,7 @@ blinking light will indicate the current octave.
 	`               ( 1)    ( 2)    ( 3)    ( 4) `
 
 
-### RIGHT
+### RIGHT - Mode Selector
 
 	`               (13)    (14)    (15)    (16) `
 	`    -->        ( 9)    (10)    (11)    (12) `
@@ -91,7 +91,7 @@ blinking light will indicate the current octave.
 
 The right direction of the stick enables a multi-mode selection as follows.
 
-## Key selection
+#### Key selection
 
 While holding the stick to the right position press button (1) to cycle through the 12 keys. By default the scale
 will play in the key of C, but pressing the button will transpose the scale by half a step. An slow blinking LED
@@ -110,7 +110,7 @@ will light up and indicate which key is currently selected. The lit LED maps as 
 	(11)    -     A#
 	(12)    -     B
 
-## scale selection
+#### scale selection
 
 While holding the stick to the right position press button (2) to cycle through 17 scales. By default the scale played
 is a chromatic scale with all 12 steps. However, enabling scales will change it so that only keys in that particular
@@ -136,7 +136,7 @@ Here is a breakdown of the different scale modes:
 	(16)   Minor Pentatonic     3-w-w-3-w
 	(17)   (defualt) chromatic.
 
-## Latch mode
+#### Latch mode
 
 While holding the stick to the right position press button (3) to toggle latch mode off and on. By default latch mode is
 enabled this means that values on banks are remembered and the unit will not send MIDI information until the current value
@@ -150,7 +150,7 @@ you are using has this features you should probably disable this.
 
 This is the default mode. In this mode the buttons imply play midi notes. While in the center position
 
-### Final words.
+## Final words.
 
 Default settings can be easily changed in the code. I've created a number of global variables to make editing default values
 easy. This code is here for all of our enjoyment if you run into issues be sure to read through the code first before

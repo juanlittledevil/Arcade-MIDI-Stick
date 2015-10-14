@@ -113,7 +113,7 @@ Bounce stick[] = {
 // knobs  
 byte knob_pins[max_knobs] = {38, 39, 40, 41, 42, 43, 44, 45};    // teensy pin values
 byte knob_state[max_knobs] = {0, 0, 0, 0, 0, 0, 0, 0};           // initialize the knob states
-
+byte knob_prev_unlatched[max_knobs] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 //            [midi_ch][part][cc_number]
 byte knob_prev_state[16][16][max_knobs];                 // used to compare updates with previous state. Did it change?
@@ -455,11 +455,7 @@ void transpose(byte butt) {
 
 void select_cc_bank(byte butt) {
   part_selection = butt;
-  if ( latch_mode == true ) {
-    set_update_flag(false);
-  } else {
-    set_update_flag(true);
-  }
+  set_update_flag(false);
   if (debug == true) {
     Serial.print("select_cc_bank(button, part_selection)");
     print_debug(butt, part_selection);
@@ -596,31 +592,50 @@ void shoot_ray(byte i) {
 
 void update_knob_states() {
 // Knob states...
-  for (byte i=0; i < max_knobs; i++ ) {
-    knob_state[i] = map(knobs[i].read(), 0, 1024, 0, 128);
-    if ( knob_state[i] == knob_prev_state[midi_channel -1][part_selection][i] ) {
-      update_flag[midi_channel][part_selection][i] = true;
-    }
-  }
-  for (byte i=0; i < max_knobs; i++ ) {
-    if ( update_flag[midi_channel][part_selection][i] == true ){
+  if ( latch_mode == true ) {
+    for (byte i=0; i < max_knobs; i++ ) {
       knob_state[i] = map(knobs[i].read(), 0, 1024, 0, 128);
-      if ( knob_state[i] != knob_prev_state[midi_channel -1][part_selection][i] ) {
+      if ( knob_state[i] == knob_prev_state[midi_channel -1][part_selection][i] ) {
+        update_flag[midi_channel][part_selection][i] = true;
+      }
+    }
+    for (byte i=0; i < max_knobs; i++ ) {
+      if ( update_flag[midi_channel][part_selection][i] == true ){
+        knob_state[i] = map(knobs[i].read(), 0, 1024, 0, 128);
+        if ( knob_state[i] != knob_prev_state[midi_channel -1][part_selection][i] ) {
+          part_midi_state[midi_channel - 1][part_selection][i] = knob_state[i];
+
+          usbMIDI.sendControlChange(part_midi_map[part_selection][i],
+                                    part_midi_state[midi_channel - 1][part_selection][i],
+                                    midi_channel
+                                    );
+
+          if (debug == true) {
+            Serial.print("update_knob_states(cc, value)");
+            print_debug(part_midi_map[part_selection][i],
+                                      part_midi_state[midi_channel - 1][part_selection][i]
+                                      );
+          }
+        }
+        knob_prev_state[midi_channel -1][part_selection][i] = knob_state[i];
+      }
+    }
+  } else {
+    for (int i=0; i < max_knobs; i++ ) {
+      knob_state[i] = map(knobs[i].read(), 0, 1024, 0, 128);
+      if ( knob_state[i] != knob_prev_unlatched[i] ) {
         part_midi_state[midi_channel - 1][part_selection][i] = knob_state[i];
 
         usbMIDI.sendControlChange(part_midi_map[part_selection][i],
-                                  part_midi_state[midi_channel - 1][part_selection][i],
-                                  midi_channel
-                                  );
+                                                part_midi_state[midi_channel - 1][part_selection][i],
+                                                midi_channel);
 
         if (debug == true) {
           Serial.print("update_knob_states(cc, value)");
-          print_debug(part_midi_map[part_selection][i],
-                                    part_midi_state[midi_channel - 1][part_selection][i]
-                                    );
+          print_debug(part_midi_map[part_selection][i], part_midi_state[midi_channel - 1][part_selection][i]);
         }
       }
-      knob_prev_state[midi_channel -1][part_selection][i] = knob_state[i];
+      knob_prev_unlatched[i] = knob_state[i];
     }
   }
 }

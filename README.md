@@ -36,7 +36,7 @@ https://github.com/rl337/Arduino/tree/master/libraries/SmoothAnalogInput
 
 The joystick is used to select different modes.
 
-### UP - MIDI Channel Selector.
+### UP - MIDI Channel Selector
 
 To select the MIDI Channel hold the joystick in the up position. Part selection is as follows.
 

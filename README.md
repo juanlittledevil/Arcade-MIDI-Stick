@@ -136,8 +136,22 @@ Here is a breakdown of the different scale modes:
 	(16)   Minor Pentatonic     3-w-w-3-w
 	(17)   (defualt) chromatic.
 
+## Latch mode
+
+While holding the stick to the right position press button (3) to toggle latch mode off and on. By default latch mode is
+enabled this means that values on banks are remembered and the unit will not send MIDI information until the current value
+matches the previous value. This prevents sudden jumbs in values sent to MIDI instruments when selecting different banks.
+
+I left the ability to disable this since some software and MIDI hardware have latching functions themselves. If the software
+you are using has this features you should probably disable this.
+
 
 ### CENTER
 
 This is the default mode. In this mode the buttons imply play midi notes. While in the center position
 
+### Final words.
+
+Default settings can be easily changed in the code. I've created a number of global variables to make editing default values
+easy. This code is here for all of our enjoyment if you run into issues be sure to read through the code first before
+reaching out to me as my time for responding to questions is very limited.

@@ -1,4 +1,4 @@
-#  Arcade MIDI Stick V2.0
+#  Arcade MIDI Stick
 
 ### Author: Juan Segovia
 ### Contact: www.juanlittledevil.com (juanlittledevil at gmail.com)
@@ -7,22 +7,33 @@
 
 ## Description:
 
-First off about the teensy,
+This is actually my second iteration of this stick not counting the version written specifically for the iElectribe app.
+The first iteration was done using a library I found online, but I quickly realized it's limitations. So this time I decided
+to stick to the supplied libraries. Well almost, I'm using two libraries which I found were quite useful, be sure to read the
+entire documentation before proceeding.
+
+I wanted this controller to be super flexible. In total you can control 16 channels with 16 banks for 8 knobs for cc
+control, and full keboard range. You can also assign note to the buttons according the 16 pre-defined musical scales.
+You can also transpose the scales so they key changes while you get to play the same buttons. This means you can jam the same
+buttons and select a different key. This feature I modled after the way the new Electribe drum machines deal with scales and keys. Other apps do this as well; Gadget and Animoog to name a couple.
+
+
+### About the teensy
 
 I'm using a Teensy 2.0++ and it is configured as with the following pinout:
 
-// PUSH BUTTONS
+#### // PUSH BUTTONS
 pins 0 to 15 are connected to momentary switches which are arranged in a matrix of 4 x 4 where
 pin 0 is on the lower left and 15 is on the upper right.
 
-// JOYSTICK
+#### // JOYSTICK
 pins 16 - 19 connect to an arcade joystick where 16=Right, 17=Down, 18=Left, 19=Up
 
-// LED
+#### // LED
 pins 20 - 35 are connected to the matrix as well and match the push buttons so that 20 is on the
 lower left and 35 is on the upper right.
 
-// KNOBS
+#### // KNOBS
 38 - 45 are the analogue pins, these connect to 8 potentiometers.
 
 NOTE: Please read the teensy documentation and take special not to to include pullup resistors
@@ -32,7 +43,7 @@ resistors for a couple of pins connected to switches as well as those which conn
 the SmoothAnalogInput.h library was installed separately.
 https://github.com/rl337/Arduino/tree/master/libraries/SmoothAnalogInput
 
-## MIDI implementation and manual.
+## MIDI implementation and manual
 
 The joystick is used to select different modes.
 

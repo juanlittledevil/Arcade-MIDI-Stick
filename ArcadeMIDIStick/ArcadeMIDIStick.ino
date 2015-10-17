@@ -56,7 +56,7 @@ const byte left = 3;
 const byte down = 4;
 byte octave = 3;  // default octave start @ C3
 byte key = 0;     // 0 is C each value is a half step.
-byte scale = 15;        // this select the index of scales[x][8]. default to chromatic.
+byte scale = 16;        // this select the index of scales[x][8]. default to chromatic.
 
 byte part_selection = 0;
 
@@ -214,7 +214,6 @@ void init_midi_map() {
 }
 
 void update_play_note() {
-  // initialize the scale with major.
   if ( scale < 16 ) {
     for (byte note = 0; note < 8; note++){
       if ( note != 7 ){
@@ -231,7 +230,7 @@ void update_play_note() {
       }
     }
   } else if (scale == 16) {
-    for (byte note = 0; note < 12; note++) {
+    for (byte note = 0; note < 16; note++) {
       play_note[note] = midi_note[octave][scales[16][note]] + key;
     }
     for (byte note = 12; note < 16; note++) {
@@ -329,11 +328,12 @@ void select_midi_channel(byte butt) {
 
 void select_scale(byte butt) {
   scale++;
-  if ( scale == 16 ) {
+  if ( scale == 17 ) {
     scale = 0;
   }
+  update_play_note();
   if (debug == true) {
-    Serial.print("select_key(butt, scale)");
+    Serial.print("select_scale(butt, scale)");
     print_debug(butt, scale);
   }
 }
@@ -355,6 +355,7 @@ void select_key(byte butt) {
   if ( key == 12 ) {
     key = 0;
   }
+  update_play_note();
   if (debug == true) {
     Serial.print("select_key(butt, key)");
     print_debug(butt, key);

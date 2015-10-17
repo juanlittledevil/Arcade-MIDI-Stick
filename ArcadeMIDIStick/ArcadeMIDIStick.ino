@@ -41,7 +41,7 @@
 // Variables
 // =======================================================================================
 
-bool debug = false;
+bool debug = true;
 bool latch_mode = true;
 
 // We have a 4 x 4 matrix of buttons.
@@ -305,7 +305,9 @@ void update_button_states() {
       // HIGH (else) means the button has been released.
       } else {
         // Send note off --
-        play_notes(butt, LOW);
+        if (stick_direction == 0) {
+          play_notes(butt, LOW);
+        }
         is_lit[butt] = LOW;
 
         // Visual Effects.

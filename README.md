@@ -157,6 +157,20 @@ I left the ability to disable this since some software and MIDI hardware have la
 you are using has this features you should probably disable this.
 
 
+#### Joystick Sends CC mode
+
+While holding the stick to the right position press button (4) to toggle this mode off and on. By default it is on but
+this behavior can easily be changed by setting the global variale cc_joystick_mode to false.
+
+I felt that it would sometimes be nice to send cc values, this works well specially if you want to use the joystick to
+navigate clips like in an app like modstep on iOS. The this sacrifices 4 cc values which will be set to 1 when the
+joystick is moved in one of the 4 directions and 0 when the joystick is returned to the center. The 4 values used are:
+
+    midi 16, cc 124;
+    midi 16, cc 125;
+    midi 16, cc 126;
+    midi 16, cc 127;
+
 ### CENTER
 
 This is the default mode. In this mode the buttons imply play midi notes. While in the center position

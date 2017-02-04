@@ -180,24 +180,24 @@ void detect_direction(byte i, boolean on) {
       // Right
       stick_direction = right;
       if (cc_joystick_mode == true) {
-        usbMIDI.sendControlChange(127,1,16); // stick-sends-cc.
+        usbMIDI.sendControlChange(124,1,16); // stick-sends-cc.
       }
     } else if (i == 1) {
       // Up
       stick_direction = up;
       if (cc_joystick_mode == true) {
-        usbMIDI.sendControlChange(126,1,16); // stick-sends-cc.
+        usbMIDI.sendControlChange(125,1,16); // stick-sends-cc.
       }
     } else if (i == 2) {
       // Left
       stick_direction = left;
       if (cc_joystick_mode == true) {
-        usbMIDI.sendControlChange(125,1,16); // stick-sends-cc.
+        usbMIDI.sendControlChange(126,1,16); // stick-sends-cc.
       }
     } else if (i == 3) {
       // down
       stick_direction = down;
-      usbMIDI.sendControlChange(124,1,16); // stick-sends-cc.
+      usbMIDI.sendControlChange(127,1,16); // stick-sends-cc.
     }
   } else {
     // Center

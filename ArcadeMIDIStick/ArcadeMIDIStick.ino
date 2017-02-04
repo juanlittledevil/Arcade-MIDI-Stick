@@ -43,6 +43,7 @@
 
 bool debug = true;
 bool latch_mode = true;
+bool cc_joystick_mode = true;
 
 // We have a 4 x 4 matrix of buttons.
 byte midi_channel = 10;
@@ -156,12 +157,11 @@ byte update_flag[16][16][8];
 byte play_note[16];
 
 // Timer matrix, match the index to pair them up.
-byte tick[] = {0,0,0,0,0};
-const byte tock[] = {200,100,200,25,10};
+byte tick[] = {0,0,0,0,0,0};
+const byte tock[] = {200,100,200,25,15,10};
 
 // =======================================================================================
-// Methods
-// =======================================================================================
+// Methods // =======================================================================================
 void boot_sequence() {
 // Flashy splash sequence at boot time.
   for (byte i=0; i < matrix_size; i++ ) {
@@ -179,15 +179,21 @@ void detect_direction(byte i, boolean on) {
     if (i == 0) {
       // Right
       stick_direction = right;
-      usbMIDI.sendControlChange(127,1,16); // stick-sends-cc.
+      if (cc_joystick_mode == true) {
+        usbMIDI.sendControlChange(127,1,16); // stick-sends-cc.
+      }
     } else if (i == 1) {
       // Up
       stick_direction = up;
-      usbMIDI.sendControlChange(126,1,16); // stick-sends-cc.
+      if (cc_joystick_mode == true) {
+        usbMIDI.sendControlChange(126,1,16); // stick-sends-cc.
+      }
     } else if (i == 2) {
       // Left
       stick_direction = left;
-      usbMIDI.sendControlChange(125,1,16); // stick-sends-cc.
+      if (cc_joystick_mode == true) {
+        usbMIDI.sendControlChange(125,1,16); // stick-sends-cc.
+      }
     } else if (i == 3) {
       // down
       stick_direction = down;
@@ -196,10 +202,12 @@ void detect_direction(byte i, boolean on) {
   } else {
     // Center
     stick_direction = 0;
-    usbMIDI.sendControlChange(124,0,16); // stick-sends-cc.
-    usbMIDI.sendControlChange(125,0,16); // stick-sends-cc.
-    usbMIDI.sendControlChange(126,0,16); // stick-sends-cc.
-    usbMIDI.sendControlChange(127,0,16); // stick-sends-cc.
+    if (cc_joystick_mode == true) {
+      usbMIDI.sendControlChange(124,0,16); // stick-sends-cc.
+      usbMIDI.sendControlChange(125,0,16); // stick-sends-cc.
+      usbMIDI.sendControlChange(126,0,16); // stick-sends-cc.
+      usbMIDI.sendControlChange(127,0,16); // stick-sends-cc.
+    }
   }
   if (debug == true) {
     Serial.print("detect_direction(pin, direction)");
@@ -216,6 +224,23 @@ void display_octave(byte index) {
   if ( tick[index] >= tock[index] / 2 ) {
     if ( stick_direction == left ) {
       digitalWrite(led[octave], LOW);
+    }
+  }
+  if ( tick[index] == tock[index] ) {
+    tick[index] = 0;
+  }
+  tick[index]++;
+}
+
+void display_cc_joystick_mode(byte index) {
+  if ( tick[index] <= tock[index] / 2 ) {
+    if ( stick_direction == right && cc_joystick_mode == true ) {
+      digitalWrite(led[3], HIGH);
+    }
+  }
+  if ( tick[index] >= tock[index] / 2 ) {
+    if ( stick_direction == right && cc_joystick_mode == true ) {
+      digitalWrite(led[3], LOW);
     }
   }
   if ( tick[index] == tock[index] ) {
@@ -241,7 +266,6 @@ void display_latch_mode(byte index) {
   tick[index]++;
 }
 
-/*
 void display_scale(byte index) {
   if ( tick[index] <= tock[index] / 2 ) {
     if ( stick_direction == right && scale < 16) {
@@ -258,7 +282,6 @@ void display_scale(byte index) {
   }
   tick[index]++;
 }
-*/
 
 void display_key(byte index) {
   if ( tick[index] <= tock[index] / 2 ) {
@@ -376,7 +399,6 @@ void select_midi_channel(byte butt) {
   }
 }
 
-/*
 void select_scale(byte butt) {
   scale++;
   if ( scale == 17 ) {
@@ -386,19 +408,6 @@ void select_scale(byte butt) {
   if (debug == true) {
     Serial.print("select_scale(butt, scale)");
     print_debug(butt, scale);
-  }
-}
-*/
-
-void select_latch_mode(byte butt) {
-  if (latch_mode == true) {
-    latch_mode = false;
-  } else {
-    latch_mode = true;
-  }
-  if (debug == true) {
-    Serial.print("select_latch_mode(butt, latch_mode)");
-    print_debug(butt, latch_mode);
   }
 }
 
@@ -484,6 +493,30 @@ void shoot_ray(byte i) {
   }
 }
 
+void toggle_cc_joystick_mode(byte butt) {
+  if (cc_joystick_mode == true) {
+    cc_joystick_mode = false;
+  } else {
+    cc_joystick_mode = true;
+  }
+  if (debug == true) {
+    Serial.print("toggle_cc_joystick_mode(butt, cc_joystick_mode)");
+    print_debug(butt, cc_joystick_mode);
+  }
+}
+
+void toggle_latch_mode(byte butt) {
+  if (latch_mode == true) {
+    latch_mode = false;
+  } else {
+    latch_mode = true;
+  }
+  if (debug == true) {
+    Serial.print("toggle_latch_mode(butt, latch_mode)");
+    print_debug(butt, latch_mode);
+  }
+}
+
 void transpose(byte butt) {
   octave = butt;
   update_play_note();
@@ -517,10 +550,13 @@ void update_button_states() {
             select_key(butt);
           }
           if ( butt == 1 ) { // Select scale
-            // select_scale(butt);
+            select_scale(butt);
           }
-          if ( butt == 2 ) { // Select scale
-            select_latch_mode(butt);
+          if ( butt == 2 ) { // latch mode scale
+            toggle_latch_mode(butt);
+          }
+          if ( butt == 3 ) { // cc latch mode
+            toggle_cc_joystick_mode(butt);
           }
         }
         
@@ -688,8 +724,9 @@ void loop() {
   display_midi_channel(0);
   display_octave(1);
   display_key(2);
-  // display_scale(3);
+  display_scale(3);
   display_latch_mode(4);
+  display_cc_joystick_mode(5);
 
   while (usbMIDI.read()) {
     // ignore incoming messages

@@ -163,7 +163,7 @@ While holding the stick to the right position press button (4) to toggle this mo
 this behavior can easily be changed by setting the global variale cc_joystick_mode to false.
 
 I felt that it would sometimes be nice to send cc values, this works well specially if you want to use the joystick to
-navigate clips like in an app like modstep on iOS. The this sacrifices 4 cc values which will be set to 1 when the
+navigate clips like in an app like modstep on iOS. This mode sacrifices 4 cc values which will be set to 1 when the
 joystick is moved in one of the 4 directions and 0 when the joystick is returned to the center. The 4 values used are:
 
     midi 16, cc 124;
